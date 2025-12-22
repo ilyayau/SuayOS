@@ -2,6 +2,7 @@ ENTRY(_start)
 SECTIONS
 {
     . = 0x100000;
+    __kernel_phys_base = .;
     .text : {
         *(.text*)
     }
@@ -15,4 +16,5 @@ SECTIONS
         *(.bss*)
         *(COMMON)
     }
+    __kernel_phys_end = .;
 }

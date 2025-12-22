@@ -9,7 +9,9 @@
 #include "../include/pit.h"
 #include "../include/mb2.h"
 #include "../include/pmm.h"
+#include "../include/vmm.h"
 
+extern uint64_t __kernel_phys_base, __kernel_phys_end;
 void kmain(uint64_t mb_info) {
     gdt_init();
     idt_init();
@@ -33,6 +35,7 @@ void kmain(uint64_t mb_info) {
         msg[j++] = '\n'; msg[j] = 0;
         serial_write(msg);
     }
+    vmm_init((uint64_t)&__kernel_phys_base, (uint64_t)&__kernel_phys_end);
     pic_remap();
     pic_clear_mask(0); // Unmask IRQ0
     pit_init(100); // 100Hz
