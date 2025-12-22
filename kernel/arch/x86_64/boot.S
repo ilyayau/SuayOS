@@ -21,9 +21,12 @@ multiboot2_header_end:
 .global _start
 .type _start, @function
 
+
+
 _start:
     # Set up stack
     lea stack_top(%rip), %rsp
+    mov %rbx, %rdi   # Multiboot2 info pointer (in rbx per spec)
     call kmain
     cli
 .hang:
