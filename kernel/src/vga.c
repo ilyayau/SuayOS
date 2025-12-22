@@ -15,3 +15,17 @@ void vga_print(const char *s) {
         ++i;
     }
 }
+
+// Print a single character at the next position (very simple, no scroll)
+static uint16_t vga_pos = 0;
+void vga_putc(char c) {
+    if (c == '\n') {
+        vga_pos = (vga_pos / VGA_WIDTH + 1) * VGA_WIDTH;
+    } else if (c == '\b') {
+        if (vga_pos > 0) vga_pos--;
+        VGA_ADDR[vga_pos] = vga_entry(' ', 0x07);
+    } else {
+        VGA_ADDR[vga_pos++] = vga_entry(c, 0x07);
+        if (vga_pos >= VGA_WIDTH * VGA_HEIGHT) vga_pos = 0;
+    }
+}

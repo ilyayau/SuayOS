@@ -1,6 +1,7 @@
 #include "../../include/irq.h"
 #include "../../include/serial.h"
 #include "../../include/pic.h"
+#include "../../include/kbd.h"
 #include <stdint.h>
 static volatile uint64_t tick = 0;
 static void u64_to_str(uint64_t n, char *buf) {
@@ -20,4 +21,8 @@ void irq0_handler(void) {
         serial_write(msg);
     }
     pic_send_eoi(0);
+}
+void irq1_handler(void) {
+    kbd_handle_irq();
+    pic_send_eoi(1);
 }

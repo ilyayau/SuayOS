@@ -1,6 +1,3 @@
-
-
-
 #include "../include/vga.h"
 #include "../include/serial.h"
 #include "../include/gdt.h"
@@ -10,6 +7,8 @@
 #include "../include/mb2.h"
 #include "../include/pmm.h"
 #include "../include/vmm.h"
+#include "../include/kmem.h"
+#include "../include/kbd.h"
 
 extern uint64_t __kernel_phys_base, __kernel_phys_end;
 void kmain(uint64_t mb_info) {
@@ -36,11 +35,35 @@ void kmain(uint64_t mb_info) {
         serial_write(msg);
     }
     vmm_init((uint64_t)&__kernel_phys_base, (uint64_t)&__kernel_phys_end);
+    kmem_init();
+    // kmalloc/kfree stress test
+    void *blocks[8];
+    for (int i = 0; i < 8; ++i) {
+        blocks[i] = kmalloc(64 + i * 32, 16);
+        char msg[64] = "kmalloc ";
+        uint64_t addr = (uint64_t)blocks[i];
+        int j = 8;
+        if (!addr) { msg[j++] = '0'; }
+        else {
+            char tmp[20]; int k = 0;
+            while (addr) { tmp[k++] = "0123456789ABCDEF"[addr % 16]; addr /= 16; }
+            msg[j++] = '0'; msg[j++] = 'x';
+            while (k--) msg[j++] = tmp[k];
+        }
+        msg[j++] = '\n'; msg[j] = 0;
+        serial_write(msg);
+    }
+    for (int i = 0; i < 8; ++i) {
+        kfree(blocks[i]);
+        serial_write("kfree\n");
+    }
     pic_remap();
-    pic_clear_mask(0); // Unmask IRQ0
+    pic_clear_mask(0); // Unmask IRQ0 (timer)
+    pic_clear_mask(1); // Unmask IRQ1 (keyboard)
     pit_init(100); // 100Hz
     vga_clear();
     vga_print("SuayOS booted");
+    kbd_init();
     __asm__ volatile ("sti");
     for (;;) {}
 }
