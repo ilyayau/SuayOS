@@ -62,8 +62,10 @@ void kmain(uint64_t mb_info) {
     pic_clear_mask(1); // Unmask IRQ1 (keyboard)
     pit_init(100); // 100Hz
     vga_clear();
-    vga_print("SuayOS booted");
+    vga_print("SuayOS booted\n");
     kbd_init();
     __asm__ volatile ("sti");
-    for (;;) {}
+    // Start interactive shell
+    extern void shell_run(void);
+    shell_run();
 }

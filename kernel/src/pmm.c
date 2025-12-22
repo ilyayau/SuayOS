@@ -1,7 +1,19 @@
+
 #include "../include/pmm.h"
 #include "../include/mb2.h"
 #include "../include/diag.h"
 #include "../include/serial.h"
+#include <stdint.h>
+#define PAGE_SIZE 4096
+#define MAX_PAGES 262144 // 1GiB max
+
+
+
+// ...existing code...
+
+
+// ...existing code...
+
 #include <stdint.h>
 #define PAGE_SIZE 4096
 #define MAX_PAGES 262144 // 1GiB max
@@ -55,10 +67,19 @@ void *pmm_alloc_pages(uint64_t n) {
     }
     panic("pmm_alloc_pages OOM");
 }
+
 void pmm_free_pages(void *ptr, uint64_t n) {
     uint64_t idx = ((uint64_t)ptr - base_addr) / PAGE_SIZE;
     for (uint64_t j = 0; j < n; ++j) {
         ASSERT(test_bit(idx + j));
         clear_bit(idx + j);
     }
+}
+
+uint64_t pmm_total_pages(void) { return total_pages; }
+uint64_t pmm_free_pages_count(void) {
+    uint64_t free = 0;
+    for (uint64_t i = 0; i < total_pages; ++i)
+        if (!test_bit(i)) ++free;
+    return free;
 }

@@ -4,6 +4,7 @@
 #include "../../include/kbd.h"
 #include <stdint.h>
 static volatile uint64_t tick = 0;
+uint64_t get_ticks(void) { return tick; }
 static void u64_to_str(uint64_t n, char *buf) {
     char tmp[21];
     int i = 0, j = 0;
