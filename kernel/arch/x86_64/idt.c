@@ -15,6 +15,7 @@ struct __attribute__((packed)) idt_ptr {
     uint64_t base;
 };
 extern void isr_default_stub(void);
+extern void irq0_stub(void);
 static struct idt_entry idt[256] = {0};
 static struct idt_ptr idtp = {sizeof(idt)-1, (uint64_t)idt};
 void idt_init(void) {
@@ -28,5 +29,14 @@ void idt_init(void) {
         idt[i].offset_high = (handler >> 32) & 0xFFFFFFFF;
         idt[i].zero = 0;
     }
+    // IRQ0 (PIT timer) handler at 0x20
+    handler = (uint64_t)irq0_stub;
+    idt[32].offset_low = handler & 0xFFFF;
+    idt[32].selector = 0x08;
+    idt[32].ist = 0;
+    idt[32].type_attr = 0x8E;
+    idt[32].offset_mid = (handler >> 16) & 0xFFFF;
+    idt[32].offset_high = (handler >> 32) & 0xFFFFFFFF;
+    idt[32].zero = 0;
     __asm__ volatile ("lidt %0" : : "m"(idtp));
 }

@@ -5,7 +5,21 @@ BUILD_DIR := build
 ISO_NAME := suayos.iso
 ISO_PATH := $(BUILD_DIR)/$(ISO_NAME)
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
-OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o $(BUILD_DIR)/vga.o $(BUILD_DIR)/serial.o $(BUILD_DIR)/io.o $(BUILD_DIR)/gdt.o $(BUILD_DIR)/idt.o $(BUILD_DIR)/isr.o
+OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o $(BUILD_DIR)/vga.o $(BUILD_DIR)/serial.o $(BUILD_DIR)/io.o $(BUILD_DIR)/gdt.o $(BUILD_DIR)/idt.o $(BUILD_DIR)/isr.o $(BUILD_DIR)/pic.o $(BUILD_DIR)/pit.o $(BUILD_DIR)/irq.o $(BUILD_DIR)/irq_asm.o
+$(BUILD_DIR)/irq.o: kernel/arch/x86_64/irq.c
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/irq_asm.o: kernel/arch/x86_64/irq.S
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+$(BUILD_DIR)/pic.o: kernel/arch/x86_64/pic.c
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/pit.o: kernel/arch/x86_64/pit.c
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 $(BUILD_DIR)/gdt.o: kernel/arch/x86_64/gdt.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
