@@ -5,7 +5,10 @@ BUILD_DIR := build
 ISO_NAME := suayos.iso
 ISO_PATH := $(BUILD_DIR)/$(ISO_NAME)
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
-OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o
+OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o $(BUILD_DIR)/vga.o
+$(BUILD_DIR)/vga.o: kernel/src/vga.c
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 LINKER := kernel/arch/x86_64/linker.ld
 
 CC := $(shell command -v clang 2>/dev/null || command -v gcc)

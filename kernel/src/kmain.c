@@ -1,6 +1,8 @@
-#include <stdint.h>
+
+#include "../include/vga.h"
 
 void kmain(void) {
-    // Minimal kernel main
+    vga_clear();
+    vga_print("SuayOS booted");
     for (;;) {}
 }
