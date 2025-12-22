@@ -5,7 +5,10 @@ BUILD_DIR := build
 ISO_NAME := suayos.iso
 ISO_PATH := $(BUILD_DIR)/$(ISO_NAME)
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
-OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o $(BUILD_DIR)/vga.o
+OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o $(BUILD_DIR)/vga.o $(BUILD_DIR)/serial.o
+$(BUILD_DIR)/serial.o: kernel/src/serial.c
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 $(BUILD_DIR)/vga.o: kernel/src/vga.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -35,13 +38,16 @@ $(BUILD_DIR)/kmain.o: kernel/src/kmain.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 
+
 iso: kernel
 	@mkdir -p $(BUILD_DIR)
-	@echo "TODO: produce bootable ISO at $(ISO_PATH)"
+	cp $(BUILD_DIR)/kernel.elf iso_root/boot/kernel.elf
+	grub-mkrescue -o $(ISO_PATH) iso_root > /dev/null 2>&1
+
 
 
 run: iso
-	@echo "TODO: launch QEMU with $(ISO_PATH)"
+	qemu-system-x86_64 -cdrom $(ISO_PATH) -serial stdio
 
 
 clean:
