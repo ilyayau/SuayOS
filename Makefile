@@ -5,7 +5,7 @@ BUILD_DIR := build
 ISO_NAME := suayos.iso
 ISO_PATH := $(BUILD_DIR)/$(ISO_NAME)
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
-SRC := kernel/src/main.c
+OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o
 LINKER := kernel/arch/x86_64/linker.ld
 
 CC := $(shell command -v clang 2>/dev/null || command -v gcc)
@@ -18,10 +18,18 @@ all: iso
 
 kernel: $(KERNEL_ELF)
 
-$(KERNEL_ELF): $(SRC) $(LINKER)
+
+$(KERNEL_ELF): $(OBJS) $(LINKER)
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $(SRC) -o $(BUILD_DIR)/main.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(BUILD_DIR)/main.o -o $(KERNEL_ELF)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $(KERNEL_ELF)
+
+$(BUILD_DIR)/boot.o: kernel/arch/x86_64/boot.S
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/kmain.o: kernel/src/kmain.c
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 
 iso: kernel
