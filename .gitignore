@@ -1,0 +1,16 @@
+# Build outputs
+build/
+*.o
+*.obj
+*.elf
+*.iso
+*.bin
+*.img
+*.map
+*.log
+
+# Editor/OS junk
+.DS_Store
+*.swp
+*.swo
+*~
