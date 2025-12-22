@@ -8,7 +8,7 @@
 #include "../include/pic.h"
 #include "../include/pit.h"
 #include "../include/mb2.h"
-#include "../include/bump.h"
+#include "../include/pmm.h"
 
 void kmain(uint64_t mb_info) {
     gdt_init();
@@ -16,13 +16,13 @@ void kmain(uint64_t mb_info) {
     serial_init();
     serial_write("SuayOS serial online\n");
     mb2_parse(mb_info);
-    bump_init(mb2_get_usable_base(), mb2_get_usable_size());
-    // Self-test: allocate 3 blocks and log addresses
+    pmm_init(mb_info);
+    // Self-test: allocate 3 pages and log addresses
     for (int i = 0; i < 3; ++i) {
-        void *p = bump_alloc(128, 16);
-        char msg[64] = "bump ";
+        void *p = pmm_alloc_pages(1);
+        char msg[64] = "pmm ";
         uint64_t addr = (uint64_t)p;
-        int j = 5;
+        int j = 4;
         if (!addr) { msg[j++] = '0'; }
         else {
             char tmp[20]; int k = 0;
