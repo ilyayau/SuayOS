@@ -7,7 +7,12 @@ BUILD_DIR := build
 ISO_NAME := suayos.iso
 ISO_PATH := $(BUILD_DIR)/$(ISO_NAME)
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
-OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o $(BUILD_DIR)/vga.o $(BUILD_DIR)/serial.o $(BUILD_DIR)/io.o $(BUILD_DIR)/gdt.o $(BUILD_DIR)/idt.o $(BUILD_DIR)/isr.o $(BUILD_DIR)/pic.o $(BUILD_DIR)/pit.o $(BUILD_DIR)/irq.o $(BUILD_DIR)/irq_asm.o $(BUILD_DIR)/mb2.o $(BUILD_DIR)/bump.o $(BUILD_DIR)/diag.o $(BUILD_DIR)/pmm.o $(BUILD_DIR)/vmm.o $(BUILD_DIR)/kmem.o $(BUILD_DIR)/kbd.o $(BUILD_DIR)/shell.o $(BUILD_DIR)/string.o
+OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o $(BUILD_DIR)/vga.o $(BUILD_DIR)/serial.o $(BUILD_DIR)/io.o $(BUILD_DIR)/gdt.o $(BUILD_DIR)/idt.o $(BUILD_DIR)/isr.o $(BUILD_DIR)/isr_stub.o $(BUILD_DIR)/pic.o $(BUILD_DIR)/pit.o $(BUILD_DIR)/irq.o $(BUILD_DIR)/irq_asm.o $(BUILD_DIR)/mb2.o $(BUILD_DIR)/bump.o $(BUILD_DIR)/diag.o $(BUILD_DIR)/pmm.o $(BUILD_DIR)/vmm.o $(BUILD_DIR)/kmem.o $(BUILD_DIR)/kbd.o $(BUILD_DIR)/shell.o $(BUILD_DIR)/string.o $(BUILD_DIR)/user.o $(BUILD_DIR)/enter_usermode.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall_stub.o $(BUILD_DIR)/isr_common.o
+include isr_make.inc
+include syscall_make.inc
+
+include user_make.inc
+INITRD_IMG := $(BUILD_DIR)/initrd.img
 $(BUILD_DIR)/string.o: kernel/src/string.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -20,6 +25,8 @@ $(BUILD_DIR)/kbd.o: kernel/src/kbd.c
 $(BUILD_DIR)/kmem.o: kernel/src/kmem.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
+$(INITRD_IMG):
+	./scripts/mkinitrd.sh
 $(BUILD_DIR)/vmm.o: kernel/src/vmm.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -58,7 +65,10 @@ $(BUILD_DIR)/idt.o: kernel/arch/x86_64/idt.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/isr.o: kernel/arch/x86_64/isr.S
+$(BUILD_DIR)/isr.o: kernel/src/isr.c
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+$(BUILD_DIR)/isr_stub.o: kernel/arch/x86_64/isr.S
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 $(BUILD_DIR)/io.o: kernel/arch/x86_64/io.c
@@ -100,7 +110,10 @@ $(BUILD_DIR)/kmain.o: kernel/src/kmain.c
 iso: kernel
 	@mkdir -p $(BUILD_DIR)
 	cp $(BUILD_DIR)/kernel.elf iso_root/boot/kernel.elf
-	grub-mkrescue -o $(ISO_PATH) iso_root > /dev/null 2>&1
+	cp $(INITRD_IMG) iso_root/boot/initrd.img
+	grub-mkrescue -o $(ISO_PATH) iso_root
+	@mkdir -p $(BUILD_DIR)/iso/boot/grub
+	cp grub.cfg $(BUILD_DIR)/iso/boot/grub/grub.cfg
 
 
 

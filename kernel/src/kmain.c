@@ -14,6 +14,8 @@ extern uint64_t __kernel_phys_base, __kernel_phys_end;
 void kmain(uint64_t mb_info) {
     gdt_init();
     idt_init();
+    extern void syscall_init(void);
+    syscall_init();
     serial_init();
     serial_write("SuayOS serial online\n");
     mb2_parse(mb_info);
@@ -65,6 +67,10 @@ void kmain(uint64_t mb_info) {
     vga_print("SuayOS booted\n");
     kbd_init();
     __asm__ volatile ("sti");
+    // Test user mode: run user program
+    extern void user_run(void);
+    user_run();
+
     // Start interactive shell
     extern void shell_run(void);
     shell_run();

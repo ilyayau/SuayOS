@@ -17,6 +17,7 @@ struct __attribute__((packed)) idt_ptr {
 extern void isr_default_stub(void);
 extern void irq0_stub(void);
 extern void irq1_stub(void);
+extern void isr_syscall_stub(void);
 static struct idt_entry idt[256] = {0};
 static struct idt_ptr idtp = {sizeof(idt)-1, (uint64_t)idt};
 void idt_init(void) {
@@ -48,5 +49,14 @@ void idt_init(void) {
     idt[33].offset_mid = (handler >> 16) & 0xFFFF;
     idt[33].offset_high = (handler >> 32) & 0xFFFFFFFF;
     idt[33].zero = 0;
+    // Syscall handler at 0x80
+    handler = (uint64_t)isr_syscall_stub;
+    idt[0x80].offset_low = handler & 0xFFFF;
+    idt[0x80].selector = 0x08;
+    idt[0x80].ist = 0;
+    idt[0x80].type_attr = 0xEE; // present, DPL=3, interrupt gate
+    idt[0x80].offset_mid = (handler >> 16) & 0xFFFF;
+    idt[0x80].offset_high = (handler >> 32) & 0xFFFFFFFF;
+    idt[0x80].zero = 0;
     __asm__ volatile ("lidt %0" : : "m"(idtp));
 }
