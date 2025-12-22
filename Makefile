@@ -1,3 +1,5 @@
+check:
+	$(MAKE) -B kernel
 .PHONY: all kernel iso run clean
 
 

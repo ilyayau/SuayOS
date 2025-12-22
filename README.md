@@ -2,28 +2,34 @@
 
 Minimal skeleton for a freestanding x86_64 kernel and bootable ISO.
 
-## Prerequisites
+
+## Prerequisites (Linux)
 - GNU Make
-- x86_64-elf binutils and gcc (cross toolchain) available on PATH
 - `grub-mkrescue` (from `grub-pc-bin` on Debian/Ubuntu or equivalent) and `xorriso`
-- `qemu-system-x86_64` for running the ISO
+- `qemu-system-x86_64`
+- `clang` (preferred) or `gcc`
+
+Check your toolchain:
+```sh
+./scripts/setup_toolchain.sh
+```
+
+Install missing tools (Ubuntu/Debian):
+```sh
+sudo apt-get install build-essential grub-pc-bin xorriso qemu-system-x86
+```
+
 
 ## Build and run
 ```sh
-# Build the freestanding kernel binary
-make kernel
+# Full clean build
+./scripts/build.sh
 
-# Package a bootable ISO under build/suayos.iso
-make iso
-
-# Build everything
-make all
+# Fast sanity build
+make check
 
 # Run the ISO in QEMU
 make run
-
-# Clean build artifacts
-make clean
 ```
 
 ## Layout
