@@ -29,7 +29,7 @@ struct __attribute__((packed)) tss {
     uint16_t iomap_base;
 };
 
-static struct gdt_entry gdt[7];
+static struct gdt_entry gdt[7] __attribute__((aligned(16)));
 static struct gdt_ptr gdtp;
 static struct tss tss __attribute__((aligned(16)));
 
@@ -39,34 +39,25 @@ void tss_load(void) {
 
 void gdt_init(void) {
     // Null
-    gdt[0] = (struct gdt_entry){0};
+    *(uint64_t *)&gdt[0] = 0;
     // Kernel code
-    gdt[1] = (struct gdt_entry){
-        .limit_low = 0xFFFF, .base_low = 0, .base_mid = 0, .access = 0x9A, .gran = 0xA0, .base_high = 0
-    };
+    *(uint64_t *)&gdt[1] = 0x00af9a000000ffffULL;
     // Kernel data
-    gdt[2] = (struct gdt_entry){
-        .limit_low = 0xFFFF, .base_low = 0, .base_mid = 0, .access = 0x92, .gran = 0xA0, .base_high = 0
-    };
+    *(uint64_t *)&gdt[2] = 0x00cf92000000ffffULL;
     // User code
-    gdt[3] = (struct gdt_entry){
-        .limit_low = 0xFFFF, .base_low = 0, .base_mid = 0, .access = 0xFA, .gran = 0xA0, .base_high = 0
-    };
+    *(uint64_t *)&gdt[3] = 0x00affa000000ffffULL;
     // User data
-    gdt[4] = (struct gdt_entry){
-        .limit_low = 0xFFFF, .base_low = 0, .base_mid = 0, .access = 0xF2, .gran = 0xA0, .base_high = 0
-    };
+    *(uint64_t *)&gdt[4] = 0x00cff2000000ffffULL;
     // TSS (64-bit)
     uint64_t tss_base = (uint64_t)&tss;
-    gdt[5] = (struct gdt_entry){
-        .limit_low = sizeof(struct tss)-1,
-        .base_low = tss_base & 0xFFFF,
-        .base_mid = (tss_base >> 16) & 0xFF,
-        .access = 0x89, // present, type=9 (64-bit TSS)
-        .gran = ((tss_base >> 24) & 0xFF),
-        .base_high = (tss_base >> 32) & 0xFF
-    };
-    gdt[6] = (struct gdt_entry){0}; // TSS high (not used in this simple GDT)
+    *(uint64_t *)&gdt[5] =
+        ((sizeof(struct tss)-1) & 0xFFFF) |
+        ((tss_base & 0xFFFF) << 16) |
+        (((tss_base >> 16) & 0xFF) << 32) |
+        ((0x89ULL) << 40) |
+        ((((tss_base >> 24) & 0xFF)) << 48) |
+        (((tss_base >> 32) & 0xFF) << 56);
+    *(uint64_t *)&gdt[6] = 0;
 
     gdtp.limit = sizeof(gdt)-1;
     gdtp.base = (uint64_t)&gdt;
