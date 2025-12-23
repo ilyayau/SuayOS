@@ -1,15 +1,11 @@
 
-.section .multiboot2_header, "a"
+.section .multiboot, "a"
 .align 8
-.long 0xE85250D6              # magic
-.long 0                     # architecture (0 = i386+, works for x86_64)
-.long multiboot2_header_end - multiboot2_header # header length
-.long -(0xE85250D6 + 0 + (multiboot2_header_end - multiboot2_header)) # checksum
 multiboot2_header:
-    .long 0xE85250D6
-    .long 0
-    .long multiboot2_header_end - multiboot2_header
-    .long -(0xE85250D6 + 0 + (multiboot2_header_end - multiboot2_header))
+    .long 0xE85250D6              # magic
+    .long 0                       # architecture (0 = i386+, works for x86_64)
+    .long multiboot2_header_end - multiboot2_header # header length
+    .long -(0xE85250D6 + 0 + (multiboot2_header_end - multiboot2_header)) # checksum
     .short 0
     .short 0
     .long 8

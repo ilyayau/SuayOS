@@ -107,13 +107,14 @@ $(BUILD_DIR)/kmain.o: kernel/src/kmain.c
 
 
 
+
 iso: kernel
 	@mkdir -p $(BUILD_DIR)
 	cp $(BUILD_DIR)/kernel.elf iso_root/boot/kernel.elf
 	cp $(INITRD_IMG) iso_root/boot/initrd.img
+	mkdir -p iso_root/boot/grub
+	cp grub.cfg iso_root/boot/grub/grub.cfg
 	grub-mkrescue -o $(ISO_PATH) iso_root
-	@mkdir -p $(BUILD_DIR)/iso/boot/grub
-	cp grub.cfg $(BUILD_DIR)/iso/boot/grub/grub.cfg
 
 
 
