@@ -1,3 +1,5 @@
+verify-iso: iso
+	bash scripts/verify_iso.sh
 check:
 	$(MAKE) -B kernel
 .PHONY: all kernel iso run clean
