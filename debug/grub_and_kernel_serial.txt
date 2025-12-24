@@ -1,0 +1,11 @@
+qemu-system-x86_64 -M pc -m 256M -cdrom build/suayos.iso -boot d -no-reboot -no-shutdown -display none -serial stdio -d cpu_reset,guest_errors -D qemu.log
+
+--- observed serial output ---
+GNU GRUB  version 2:2.14rc1.r54.g29f3131a-2
+  Booting `SuayOS`
+
+E64
+IDT
+GDT
+KM
+EXC 13

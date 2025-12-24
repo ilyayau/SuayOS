@@ -28,7 +28,12 @@ $(BUILD_DIR)/kmem.o: kernel/src/kmem.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 $(INITRD_IMG):
-	./scripts/mkinitrd.sh
+	@mkdir -p $(BUILD_DIR)
+	@./scripts/mkinitrd.sh || true
+	@if [ ! -f "$(INITRD_IMG)" ]; then \
+		echo "[mkinitrd] WARNING: $(INITRD_IMG) missing; creating empty initrd"; \
+		: > "$(INITRD_IMG)"; \
+	fi
 $(BUILD_DIR)/vmm.o: kernel/src/vmm.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -85,7 +90,9 @@ $(BUILD_DIR)/vga.o: kernel/src/vga.c
 LINKER := kernel/arch/x86_64/linker.ld
 
 CC := $(shell command -v clang 2>/dev/null || command -v gcc)
-CFLAGS := -ffreestanding -fno-stack-protector -fno-pic -mno-red-zone -O2 -Wall -Wextra
+CFLAGS := -ffreestanding -fno-stack-protector -fno-pic -mno-red-zone -O2 -Wall -Wextra \
+	-mno-sse -mno-sse2 -mno-mmx -msoft-float \
+	-DENABLE_IRQ=0
 LDFLAGS := -T $(LINKER) -nostdlib -static
 
 
@@ -110,7 +117,7 @@ $(BUILD_DIR)/kmain.o: kernel/src/kmain.c
 
 
 
-iso: kernel
+iso: kernel $(INITRD_IMG)
 	@mkdir -p $(BUILD_DIR)
 	cp $(BUILD_DIR)/kernel.elf iso_root/boot/kernel.elf
 	cp $(INITRD_IMG) iso_root/boot/initrd.img

@@ -11,7 +11,8 @@
 #include "../include/kbd.h"
 
 extern uint64_t __kernel_phys_base, __kernel_phys_end;
-void kmain(uint64_t mb_info) {
+__attribute__((noreturn)) void kmain(uint64_t mb_info) {
+    __asm__ volatile ("cli");
     gdt_init();
     idt_init();
     extern void syscall_init(void);
@@ -59,19 +60,25 @@ void kmain(uint64_t mb_info) {
         kfree(blocks[i]);
         serial_write("kfree\n");
     }
+    vga_clear();
+    vga_print("SuayOS booted\n");
+
+#if ENABLE_IRQ
     pic_remap();
     pic_clear_mask(0); // Unmask IRQ0 (timer)
     pic_clear_mask(1); // Unmask IRQ1 (keyboard)
     pit_init(100); // 100Hz
-    vga_clear();
-    vga_print("SuayOS booted\n");
     kbd_init();
     __asm__ volatile ("sti");
-    // Test user mode: run user program
     extern void user_run(void);
     user_run();
-
-    // Start interactive shell
     extern void shell_run(void);
     shell_run();
+#else
+    serial_write("IRQs disabled\n");
+#endif
+
+    for (;;) {
+        __asm__ volatile ("cli; hlt");
+    }
 }

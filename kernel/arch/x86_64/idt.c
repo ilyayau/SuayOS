@@ -18,7 +18,7 @@ extern void isr_default_stub(void);
 extern void irq0_stub(void);
 extern void irq1_stub(void);
 extern void isr_syscall_stub(void);
-static struct idt_entry idt[256] = {0};
+static struct idt_entry idt[256] __attribute__((aligned(16))) = {0};
 static struct idt_ptr idtp = {sizeof(idt)-1, (uint64_t)idt};
 void idt_init(void) {
     uint64_t handler = (uint64_t)isr_default_stub;
