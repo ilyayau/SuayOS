@@ -3,13 +3,15 @@ verify-iso: iso
 
 qemu-log: iso
 	@mkdir -p $(BUILD_DIR)
-	@echo "[qemu] headless run (6s), log: $(BUILD_DIR)/qemu.log"
+	@echo "[qemu] headless run (6s)"
+	@echo "[qemu] qemu internal log: $(BUILD_DIR)/qemu.log"
 	@timeout 6s qemu-system-x86_64 \
 		-cdrom $(ISO_PATH) \
 		-no-reboot -no-shutdown \
-		-nographic -display none \
-		-monitor none \
-		-serial stdio \
+		-display none \
+		-chardev stdio,id=ch0,mux=on,signal=off \
+		-serial chardev:ch0 \
+		-device isa-debugcon,iobase=0xe9,chardev=ch0 \
 		-d int,guest_errors \
 		-D $(BUILD_DIR)/qemu.log \
 		</dev/null || true
@@ -26,7 +28,7 @@ ISO_NAME := suayos.iso
 ISO_PATH := $(BUILD_DIR)/$(ISO_NAME)
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
 KERNEL_MAP := $(BUILD_DIR)/kernel.map
-OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o $(BUILD_DIR)/vga.o $(BUILD_DIR)/serial.o $(BUILD_DIR)/io.o $(BUILD_DIR)/gdt.o $(BUILD_DIR)/idt.o $(BUILD_DIR)/isr.o $(BUILD_DIR)/isr_stub.o $(BUILD_DIR)/pic.o $(BUILD_DIR)/pit.o $(BUILD_DIR)/irq.o $(BUILD_DIR)/irq_asm.o $(BUILD_DIR)/mb2.o $(BUILD_DIR)/bump.o $(BUILD_DIR)/diag.o $(BUILD_DIR)/pmm.o $(BUILD_DIR)/vmm.o $(BUILD_DIR)/kmem.o $(BUILD_DIR)/kbd.o $(BUILD_DIR)/shell.o $(BUILD_DIR)/string.o $(BUILD_DIR)/user.o $(BUILD_DIR)/enter_usermode.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall_stub.o $(BUILD_DIR)/isr_common.o
+OBJS := $(BUILD_DIR)/boot.o $(BUILD_DIR)/kmain.o $(BUILD_DIR)/vga.o $(BUILD_DIR)/serial.o $(BUILD_DIR)/log.o $(BUILD_DIR)/io.o $(BUILD_DIR)/gdt.o $(BUILD_DIR)/idt.o $(BUILD_DIR)/isr.o $(BUILD_DIR)/isr_stub.o $(BUILD_DIR)/pic.o $(BUILD_DIR)/pit.o $(BUILD_DIR)/irq.o $(BUILD_DIR)/irq_asm.o $(BUILD_DIR)/mb2.o $(BUILD_DIR)/bump.o $(BUILD_DIR)/diag.o $(BUILD_DIR)/pmm.o $(BUILD_DIR)/vmm.o $(BUILD_DIR)/kmem.o $(BUILD_DIR)/kbd.o $(BUILD_DIR)/shell.o $(BUILD_DIR)/string.o $(BUILD_DIR)/user.o $(BUILD_DIR)/enter_usermode.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall_stub.o $(BUILD_DIR)/isr_common.o
 include isr_make.inc
 include syscall_make.inc
 
@@ -101,6 +103,10 @@ $(BUILD_DIR)/io.o: kernel/arch/x86_64/io.c
 $(BUILD_DIR)/serial.o: kernel/src/serial.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/log.o: kernel/src/log.c
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 $(BUILD_DIR)/vga.o: kernel/src/vga.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -153,13 +159,6 @@ debug-iso: clean iso
 	@echo "[debug-iso] Built $(ISO_PATH)"
 	@echo "[debug-iso] ELF: $(KERNEL_ELF)"
 	@echo "[debug-iso] MAP: $(KERNEL_MAP)"
-
-
-qemu-log: iso
-	qemu-system-x86_64 -cdrom $(ISO_PATH) \
-		-serial stdio \
-		-no-reboot -no-shutdown \
-		-d int,cpu_reset,guest_errors -D qemu.log
 
 
 clean:
