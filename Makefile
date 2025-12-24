@@ -90,10 +90,6 @@ $(BUILD_DIR)/gdt.o: kernel/arch/x86_64/gdt.c
 $(BUILD_DIR)/idt.o: kernel/arch/x86_64/idt.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/isr.o: kernel/src/isr.c
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
 $(BUILD_DIR)/isr_stub.o: kernel/arch/x86_64/isr.S
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
