@@ -9,15 +9,31 @@
 #include "../include/vmm.h"
 #include "../include/kmem.h"
 #include "../include/kbd.h"
+#include "../include/io.h"
 
 extern uint64_t __kernel_phys_base, __kernel_phys_end;
+
+static inline void io_wait(void) {
+    outb(0x80, 0);
+}
+
+static void busy_delay_approx_100ms(void) {
+    for (uint32_t i = 0; i < 100000; ++i) {
+        io_wait();
+        __asm__ volatile ("pause");
+    }
+}
+
 __attribute__((noreturn)) void kmain(uint64_t mb_info) {
     __asm__ volatile ("cli");
+
+    serial_write("KMAIN\n");
+    serial_init();
+
     gdt_init();
     idt_init();
     extern void syscall_init(void);
     syscall_init();
-    serial_init();
     serial_write("SuayOS serial online\n");
     mb2_parse(mb_info);
     pmm_init(mb_info);
@@ -62,6 +78,7 @@ __attribute__((noreturn)) void kmain(uint64_t mb_info) {
     }
     vga_clear();
     vga_print("SuayOS booted\n");
+    serial_write("SuayOS booted\n");
 
 #if ENABLE_IRQ
     pic_remap();
@@ -78,7 +95,9 @@ __attribute__((noreturn)) void kmain(uint64_t mb_info) {
     serial_write("IRQs disabled\n");
 #endif
 
+    serial_write("heartbeat: ");
     for (;;) {
-        __asm__ volatile ("cli; hlt");
+        serial_putc('.');
+        busy_delay_approx_100ms();
     }
 }
