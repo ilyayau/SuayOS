@@ -10,6 +10,7 @@
 #include "../include/kmem.h"
 #include "../include/kbd.h"
 #include "../include/io.h"
+#include "../include/log.h"
 
 extern uint64_t __kernel_phys_base, __kernel_phys_end;
 
@@ -27,16 +28,31 @@ static void busy_delay_approx_100ms(void) {
 __attribute__((noreturn)) void kmain(uint64_t mb_info) {
     __asm__ volatile ("cli");
 
-    serial_write("KMAIN\n");
-    serial_init();
+    log_init();
+    logs("stage0: entered kmain\n");
 
+    logs("[A] before gdt_init\n");
     gdt_init();
+    logs("[B] after gdt_init\n");
+
+    logs("[C] before idt_init\n");
     idt_init();
+    logs("[D] after idt_init\n");
+
     extern void syscall_init(void);
+    logs("[E] before syscall_init\n");
     syscall_init();
-    serial_write("SuayOS serial online\n");
+    logs("[F] after syscall_init\n");
+    logs("stage1: early init ok\n");
+    logs("SuayOS serial+debugcon online\n");
+
+    logs("[G] before mb2_parse\n");
     mb2_parse(mb_info);
+    logs("[H] after mb2_parse\n");
+
+    logs("[I] before pmm_init\n");
     pmm_init(mb_info);
+    logs("[J] after pmm_init\n");
     // Self-test: allocate 3 pages and log addresses
     for (int i = 0; i < 3; ++i) {
         void *p = pmm_alloc_pages(1);
@@ -51,10 +67,16 @@ __attribute__((noreturn)) void kmain(uint64_t mb_info) {
             while (k--) msg[j++] = tmp[k];
         }
         msg[j++] = '\n'; msg[j] = 0;
-        serial_write(msg);
+        logs(msg);
     }
+
+    logs("[K] before vmm_init\n");
     vmm_init((uint64_t)&__kernel_phys_base, (uint64_t)&__kernel_phys_end);
+    logs("[L] after vmm_init\n");
+
+    logs("[M] before kmem_init\n");
     kmem_init();
+    logs("[N] after kmem_init\n");
     // kmalloc/kfree stress test
     void *blocks[8];
     for (int i = 0; i < 8; ++i) {
@@ -70,15 +92,15 @@ __attribute__((noreturn)) void kmain(uint64_t mb_info) {
             while (k--) msg[j++] = tmp[k];
         }
         msg[j++] = '\n'; msg[j] = 0;
-        serial_write(msg);
+        logs(msg);
     }
     for (int i = 0; i < 8; ++i) {
         kfree(blocks[i]);
-        serial_write("kfree\n");
+        logs("kfree\n");
     }
     vga_clear();
     vga_print("SuayOS booted\n");
-    serial_write("SuayOS booted\n");
+    logs("SuayOS booted\n");
 
 #if ENABLE_IRQ
     pic_remap();
@@ -92,12 +114,12 @@ __attribute__((noreturn)) void kmain(uint64_t mb_info) {
     extern void shell_run(void);
     shell_run();
 #else
-    serial_write("IRQs disabled\n");
+    logs("IRQs disabled\n");
 #endif
 
-    serial_write("heartbeat: ");
+    logs("HB");
     for (;;) {
-        serial_putc('.');
+        logc('.');
         busy_delay_approx_100ms();
     }
 }
