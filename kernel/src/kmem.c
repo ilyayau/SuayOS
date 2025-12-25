@@ -10,6 +10,8 @@ struct block {
     struct block *next;
     size_t size;
     int free;
+    uint32_t _pad;
+    uint64_t _reserved;
 };
 static struct block *heap_head = 0;
 static uint64_t heap_end = HEAP_START;
@@ -29,13 +31,11 @@ void kmem_init(void) {
     heap_head->free = 1;
 }
 static struct block *find_block(size_t size, size_t align) {
+    (void)align;
     struct block *cur = heap_head;
     while (cur) {
         if (cur->free && cur->size >= size) {
-            uintptr_t addr = (uintptr_t)(cur + 1);
-            uintptr_t aligned = (addr + align - 1) & ~(align - 1);
-            size_t padding = aligned - addr;
-            if (cur->size >= size + padding) return cur;
+            return cur;
         }
         cur = cur->next;
     }
@@ -43,26 +43,27 @@ static struct block *find_block(size_t size, size_t align) {
 }
 void *kmalloc(size_t size, size_t align) {
     if (!size) return 0;
+
+    if (align == 0) align = 16;
+    if ((align & (align - 1)) != 0 || align > 16) panic("kmalloc bad align");
+    size = (size + align - 1) & ~(align - 1);
+
     struct block *b = find_block(size, align);
     if (!b) {
         heap_expand(size + align + sizeof(struct block));
         b = find_block(size, align);
         if (!b) panic("kmalloc OOM");
     }
-    uintptr_t addr = (uintptr_t)(b + 1);
-    uintptr_t aligned = (addr + align - 1) & ~(align - 1);
-    size_t padding = aligned - addr;
-    if (padding) {
-        struct block *pad = (struct block *)addr;
-        pad->next = b->next;
-        pad->size = b->size - padding;
-        pad->free = 1;
-        b->size = padding - sizeof(struct block);
-        b->next = pad;
-        b = pad;
-    }
+
+    // Block payload starts at (b + 1), which is 16-byte aligned because:
+    // - HEAP_START is 16-byte aligned
+    // - sizeof(struct block) is 32 bytes
+    // - we allocate sizes rounded up to 16
+    uintptr_t payload = (uintptr_t)(b + 1);
+    if ((payload & (align - 1)) != 0) panic("kmalloc misaligned header");
+
     if (b->size > size + sizeof(struct block)) {
-        struct block *split = (struct block *)(aligned + size);
+        struct block *split = (struct block *)(payload + size);
         split->next = b->next;
         split->size = b->size - size - sizeof(struct block);
         split->free = 1;
@@ -70,7 +71,7 @@ void *kmalloc(size_t size, size_t align) {
         b->size = size;
     }
     b->free = 0;
-    return (void *)aligned;
+    return (void *)payload;
 }
 void kfree(void *ptr) {
     if (!ptr) return;

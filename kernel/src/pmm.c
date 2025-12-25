@@ -17,11 +17,23 @@
 #include <stdint.h>
 #define PAGE_SIZE 4096
 #define MAX_PAGES 262144 // 1GiB max
+
+extern uint64_t __kernel_phys_base, __kernel_phys_end;
+
 static uint8_t bitmap[MAX_PAGES/8];
-static uint64_t total_pages = 0, usable_pages = 0, reserved_pages = 0, base_addr = 0;
+static uint64_t total_pages = 0, usable_pages = 0, reserved_pages = 0;
 static inline void set_bit(uint64_t i) { bitmap[i/8] |= (1 << (i%8)); }
 static inline void clear_bit(uint64_t i) { bitmap[i/8] &= ~(1 << (i%8)); }
 static inline int test_bit(uint64_t i) { return (bitmap[i/8] >> (i%8)) & 1; }
+
+static void reserve_phys_range(uint64_t base, uint64_t size) {
+    if (size == 0) return;
+    uint64_t start = base / PAGE_SIZE;
+    uint64_t end = (base + size + PAGE_SIZE - 1) / PAGE_SIZE;
+    if (end > MAX_PAGES) end = MAX_PAGES;
+    for (uint64_t p = start; p < end; ++p) set_bit(p);
+}
+
 void pmm_init(uint64_t mb_info) {
     for (uint64_t i = 0; i < MAX_PAGES/8; ++i) bitmap[i] = 0xFF;
     const struct mb2_tag *tag = (const struct mb2_tag *)(mb_info + 8);
@@ -37,7 +49,6 @@ void pmm_init(uint64_t mb_info) {
                 if (entry->type == MB2_MMAP_TYPE_USABLE) {
                     for (uint64_t p = first; p < last; ++p) clear_bit(p);
                     usable_pages += last - first;
-                    if (base_addr == 0) base_addr = entry->base;
                 } else {
                     reserved_pages += last - first;
                 }
@@ -46,6 +57,15 @@ void pmm_init(uint64_t mb_info) {
         }
         tag = (const struct mb2_tag *)((const char *)tag + ((tag->size + 7) & ~7));
     }
+
+    // Never allocate low memory; keep first 1MiB reserved.
+    reserve_phys_range(0, 0x100000);
+
+    // Reserve the entire loaded kernel image (includes early page tables in .text and .bss).
+    uint64_t kbase = (uint64_t)&__kernel_phys_base;
+    uint64_t kend = (uint64_t)&__kernel_phys_end;
+    if (kend > kbase) reserve_phys_range(kbase, kend - kbase);
+
     char buf[64];
     serial_write("PMM: total "); print_dec(total_pages, buf); serial_write(buf);
     serial_write(", usable "); print_dec(usable_pages, buf); serial_write(buf);
@@ -59,7 +79,7 @@ void *pmm_alloc_pages(uint64_t n) {
             if (found == 0) start = i;
             if (++found == n) {
                 for (uint64_t j = 0; j < n; ++j) set_bit(start + j);
-                return (void *)(base_addr + start * PAGE_SIZE);
+                return (void *)(start * PAGE_SIZE);
             }
         } else {
             found = 0;
@@ -69,7 +89,7 @@ void *pmm_alloc_pages(uint64_t n) {
 }
 
 void pmm_free_pages(void *ptr, uint64_t n) {
-    uint64_t idx = ((uint64_t)ptr - base_addr) / PAGE_SIZE;
+    uint64_t idx = ((uint64_t)ptr) / PAGE_SIZE;
     for (uint64_t j = 0; j < n; ++j) {
         ASSERT(test_bit(idx + j));
         clear_bit(idx + j);

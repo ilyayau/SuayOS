@@ -34,7 +34,8 @@ static struct gdt_ptr gdtp;
 static struct tss tss __attribute__((aligned(16)));
 
 void tss_load(void) {
-    __asm__ volatile ("ltr %%ax" : : "a"(0x30));
+    // TSS descriptor is a 16-byte system segment starting at GDT index 5.
+    __asm__ volatile ("ltr %%ax" : : "a"(0x28));
 }
 
 void gdt_init(void) {
@@ -50,14 +51,22 @@ void gdt_init(void) {
     *(uint64_t *)&gdt[4] = 0x00cff2000000ffffULL;
     // TSS (64-bit)
     uint64_t tss_base = (uint64_t)&tss;
-    *(uint64_t *)&gdt[5] =
-        ((sizeof(struct tss)-1) & 0xFFFF) |
-        ((tss_base & 0xFFFF) << 16) |
-        (((tss_base >> 16) & 0xFF) << 32) |
-        ((0x89ULL) << 40) |
-        ((((tss_base >> 24) & 0xFF)) << 48) |
-        (((tss_base >> 32) & 0xFF) << 56);
-    *(uint64_t *)&gdt[6] = 0;
+    // Ensure IO bitmap is disabled (iomap_base beyond TSS limit).
+    tss.iomap_base = sizeof(struct tss);
+
+    uint64_t tss_limit = sizeof(struct tss) - 1;
+    uint64_t low = 0;
+    low |= (tss_limit & 0xFFFFULL);
+    low |= ((tss_base & 0xFFFFFFULL) << 16);          // base[0:23]
+    low |= (0x89ULL << 40);                           // type=0x9 (available 64-bit TSS), P=1
+    low |= (((tss_limit >> 16) & 0xFULL) << 48);      // limit[16:19]
+    low |= (((tss_base >> 24) & 0xFFULL) << 56);      // base[24:31]
+
+    uint64_t high = 0;
+    high |= ((tss_base >> 32) & 0xFFFFFFFFULL);       // base[32:63]
+
+    *(uint64_t *)&gdt[5] = low;
+    *(uint64_t *)&gdt[6] = high;
 
     gdtp.limit = sizeof(gdt)-1;
     gdtp.base = (uint64_t)&gdt;
