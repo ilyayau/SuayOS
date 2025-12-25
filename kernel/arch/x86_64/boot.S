@@ -275,6 +275,7 @@ _start64:
     serial_putc $0x0A
 
     mov mb2_info_ptr(%rip), %rdi # Multiboot2 info pointer
+    andq $-16, %rsp
     call kmain
     cli
 .hang64:
