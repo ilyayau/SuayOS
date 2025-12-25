@@ -15,6 +15,38 @@ struct __attribute__((packed)) idt_ptr {
     uint64_t base;
 };
 extern void isr_default_stub(void);
+extern void isr_stub_0(void);
+extern void isr_stub_1(void);
+extern void isr_stub_2(void);
+extern void isr_stub_3(void);
+extern void isr_stub_4(void);
+extern void isr_stub_5(void);
+extern void isr_stub_6(void);
+extern void isr_stub_7(void);
+extern void isr_stub_8(void);
+extern void isr_stub_9(void);
+extern void isr_stub_10(void);
+extern void isr_stub_11(void);
+extern void isr_stub_12(void);
+extern void isr_stub_13(void);
+extern void isr_stub_14(void);
+extern void isr_stub_15(void);
+extern void isr_stub_16(void);
+extern void isr_stub_17(void);
+extern void isr_stub_18(void);
+extern void isr_stub_19(void);
+extern void isr_stub_20(void);
+extern void isr_stub_21(void);
+extern void isr_stub_22(void);
+extern void isr_stub_23(void);
+extern void isr_stub_24(void);
+extern void isr_stub_25(void);
+extern void isr_stub_26(void);
+extern void isr_stub_27(void);
+extern void isr_stub_28(void);
+extern void isr_stub_29(void);
+extern void isr_stub_30(void);
+extern void isr_stub_31(void);
 extern void irq0_stub(void);
 extern void irq1_stub(void);
 extern void isr_syscall_stub(void);
@@ -23,6 +55,28 @@ static struct idt_ptr idtp = {sizeof(idt)-1, (uint64_t)idt};
 void idt_init(void) {
     uint64_t handler = (uint64_t)isr_default_stub;
     for (int i = 0; i < 256; ++i) {
+        idt[i].offset_low = handler & 0xFFFF;
+        idt[i].selector = 0x08;
+        idt[i].ist = 0;
+        idt[i].type_attr = 0x8E;
+        idt[i].offset_mid = (handler >> 16) & 0xFFFF;
+        idt[i].offset_high = (handler >> 32) & 0xFFFFFFFF;
+        idt[i].zero = 0;
+    }
+
+    // CPU exceptions 0..31
+    void *exc[32] = {
+        isr_stub_0,  isr_stub_1,  isr_stub_2,  isr_stub_3,
+        isr_stub_4,  isr_stub_5,  isr_stub_6,  isr_stub_7,
+        isr_stub_8,  isr_stub_9,  isr_stub_10, isr_stub_11,
+        isr_stub_12, isr_stub_13, isr_stub_14, isr_stub_15,
+        isr_stub_16, isr_stub_17, isr_stub_18, isr_stub_19,
+        isr_stub_20, isr_stub_21, isr_stub_22, isr_stub_23,
+        isr_stub_24, isr_stub_25, isr_stub_26, isr_stub_27,
+        isr_stub_28, isr_stub_29, isr_stub_30, isr_stub_31,
+    };
+    for (int i = 0; i < 32; ++i) {
+        handler = (uint64_t)exc[i];
         idt[i].offset_low = handler & 0xFFFF;
         idt[i].selector = 0x08;
         idt[i].ist = 0;

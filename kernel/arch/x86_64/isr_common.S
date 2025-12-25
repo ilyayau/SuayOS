@@ -18,8 +18,12 @@ isr_common_stub:
     push r13
     push r14
     push r15
-    mov rdi, [rsp + 0x90] // vector number (from int stub)
-    mov rsi, [rsp + 0x98] // error code (from int stub)
+    // Stack at entry (ring0):
+    //   [vector][error][RIP][CS][RFLAGS](...[RSP][SS] if CPL change)
+    // After pushing 15 regs (120 bytes):
+    //   vector at [rsp+0x78], error at [rsp+0x80]
+    mov rdi, [rsp + 0x78] // vector number
+    mov rsi, [rsp + 0x80] // error code
     mov rdx, rsp           // pointer to saved regs
     call isr_dispatch
     // Restore registers

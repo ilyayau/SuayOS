@@ -9,6 +9,9 @@ build/
 *.map
 *.log
 
+# Local debug artifacts
+debug/*.txt
+
 # Editor/OS junk
 .DS_Store
 *.swp
