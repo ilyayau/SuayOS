@@ -32,6 +32,31 @@ make check
 make run
 ```
 
+## Crash debugging (serial-first)
+
+Run QEMU with deterministic serial output + a log file:
+```sh
+make qemu-log
+```
+
+Expected early markers (in order):
+- `BOOT0` .. `BOOT5` (from early boot)
+- `KMAIN` (from kernel entry)
+
+When the kernel prints a faulting `RIP` (from an exception or `panic()`), symbolize it:
+```sh
+./scripts/symbolize.sh 0xDEADBEEF
+```
+
+Artifacts:
+- `build/kernel.elf` (symbols/debug info for `addr2line`)
+- `build/kernel.map` (linker map file)
+
+For more detailed symbolization (line numbers), use:
+```sh
+make debug-iso
+```
+
 ## Layout
 - `kernel/` — architecture code, headers, sources
 - `iso_root/` — GRUB boot tree used to assemble the ISO
