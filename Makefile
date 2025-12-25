@@ -108,6 +108,7 @@ LINKER := kernel/arch/x86_64/linker.ld
 
 CC := $(shell command -v clang 2>/dev/null || command -v gcc)
 CFLAGS := -ffreestanding -fno-stack-protector -fno-pic -mno-red-zone -O2 -Wall -Wextra \
+	-fno-builtin -fno-omit-frame-pointer \
 	-mno-sse -mno-sse2 -mno-mmx -msoft-float \
 	-DENABLE_IRQ=0
 LDFLAGS := -T $(LINKER) -nostdlib -static
