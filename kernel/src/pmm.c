@@ -7,17 +7,6 @@
 #define PAGE_SIZE 4096
 #define MAX_PAGES 262144 // 1GiB max
 
-
-
-// ...existing code...
-
-
-// ...existing code...
-
-#include <stdint.h>
-#define PAGE_SIZE 4096
-#define MAX_PAGES 262144 // 1GiB max
-
 extern uint64_t __kernel_phys_base, __kernel_phys_end;
 
 static uint8_t bitmap[MAX_PAGES/8];
@@ -32,6 +21,14 @@ static void reserve_phys_range(uint64_t base, uint64_t size) {
     uint64_t end = (base + size + PAGE_SIZE - 1) / PAGE_SIZE;
     if (end > MAX_PAGES) end = MAX_PAGES;
     for (uint64_t p = start; p < end; ++p) set_bit(p);
+}
+
+static void reserve_module(void) {
+    uint64_t mstart = mb2_get_module_start();
+    uint64_t mend = mb2_get_module_end();
+    if (mstart && mend && mend > mstart) {
+        reserve_phys_range(mstart, mend - mstart);
+    }
 }
 
 void pmm_init(uint64_t mb_info) {
@@ -65,6 +62,9 @@ void pmm_init(uint64_t mb_info) {
     uint64_t kbase = (uint64_t)&__kernel_phys_base;
     uint64_t kend = (uint64_t)&__kernel_phys_end;
     if (kend > kbase) reserve_phys_range(kbase, kend - kbase);
+
+    // Reserve initrd module if present.
+    reserve_module();
 
     char buf[64];
     serial_write("PMM: total "); print_dec(total_pages, buf); serial_write(buf);

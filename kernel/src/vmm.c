@@ -1,6 +1,7 @@
 #include "../include/vmm.h"
 #include "../include/pmm.h"
 #include "../include/diag.h"
+#include "../include/mb2.h"
 #include <stdint.h>
 #define PAGE_SIZE 4096
 #define ENTRIES 512
@@ -54,8 +55,10 @@ void vmm_init(uint64_t kernel_phys_base, uint64_t kernel_phys_end) {
         vmm_map_page(addr, addr, VMM_RW);
 
     // Establish a direct physmap: VA = KERNEL_VMA_BASE + phys.
-    // Must cover at least early page-table allocations (often near 1MiB).
+    // Must cover at least early page-table allocations and any Multiboot2 modules (initrd).
     uint64_t physmap_end = kernel_phys_end;
+    uint64_t mod_end = mb2_get_module_end();
+    if (mod_end > physmap_end) physmap_end = mod_end;
     if (physmap_end < 0x200000) physmap_end = 0x200000;
     for (uint64_t addr = 0; addr < physmap_end; addr += PAGE_SIZE)
         vmm_map_page(KERNEL_VMA_BASE + addr, addr, VMM_RW);
