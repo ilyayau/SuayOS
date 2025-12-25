@@ -1,6 +1,15 @@
 verify-iso: iso
 	bash scripts/verify_iso.sh
 
+qemu-quick: iso
+	bash scripts/qemu_quick.sh
+
+qemu-debug: iso
+	bash scripts/qemu_debug.sh
+
+qemu-triage:
+	bash scripts/triage_log.sh
+
 qemu-log: iso
 	@mkdir -p $(BUILD_DIR)
 	@echo "[qemu] headless run (6s), log: $(BUILD_DIR)/qemu.log"
@@ -18,7 +27,7 @@ qemu-log: iso
 
 check:
 	$(MAKE) -B kernel
-.PHONY: all kernel iso run clean verify-iso check debug-iso qemu-log
+.PHONY: all kernel iso run clean verify-iso check debug-iso qemu-log qemu-quick qemu-debug qemu-triage
 
 
 BUILD_DIR := build
