@@ -3,7 +3,7 @@ set -euo pipefail
 
 ISO_PATH="${ISO_PATH:-build/suayos.iso}"
 LOG_PATH="${LOG_PATH:-build/qemu.log}"
-QEMU_TIMEOUT="${QEMU_TIMEOUT:-12s}"
+QEMU_TIMEOUT="${QEMU_TIMEOUT:-15s}"
 
 mkdir -p "$(dirname "$LOG_PATH")"
 

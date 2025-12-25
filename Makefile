@@ -14,14 +14,16 @@ qemu-log: iso
 	@mkdir -p $(BUILD_DIR)
 	@echo "[qemu] headless run (6s), log: $(BUILD_DIR)/qemu.log"
 	@timeout 6s qemu-system-x86_64 \
-		-cdrom $(ISO_PATH) \
-		-no-reboot -no-shutdown \
-		-nographic -display none \
-		-monitor none \
-		-serial stdio \
-		-d int,guest_errors \
-		-D $(BUILD_DIR)/qemu.log \
-		</dev/null || true
+			-cdrom $(ISO_PATH) \
+			-no-reboot -no-shutdown \
+			-display none \
+			-monitor none \
+			-chardev stdio,id=char0,mux=on,signal=off \
+			-serial chardev:char0 \
+			-device isa-debugcon,iobase=0xe9,chardev=char0 \
+			-d int,guest_errors \
+			-D $(BUILD_DIR)/qemu.log \
+			</dev/null || true
 	@echo "[qemu] tail $(BUILD_DIR)/qemu.log"
 	@tail -n 200 $(BUILD_DIR)/qemu.log 2>/dev/null || true
 
@@ -98,9 +100,6 @@ $(BUILD_DIR)/idt.o: kernel/arch/x86_64/idt.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/isr.o: kernel/src/isr.c
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
 $(BUILD_DIR)/isr_stub.o: kernel/arch/x86_64/isr.S
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
