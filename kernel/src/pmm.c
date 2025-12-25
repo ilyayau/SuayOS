@@ -43,6 +43,8 @@ void pmm_init(uint64_t mb_info) {
                 const struct mb2_memmap_entry *entry = (const struct mb2_memmap_entry *)(entry_ptr + i * entry_size);
                 uint64_t first = entry->base / PAGE_SIZE;
                 uint64_t last = (entry->base + entry->length) / PAGE_SIZE;
+                if (first >= MAX_PAGES) continue;
+                if (last > MAX_PAGES) last = MAX_PAGES;
                 if (entry->type == MB2_MMAP_TYPE_USABLE) {
                     for (uint64_t p = first; p < last; ++p) clear_bit(p);
                     usable_pages += last - first;
@@ -54,6 +56,8 @@ void pmm_init(uint64_t mb_info) {
         }
         tag = (const struct mb2_tag *)((const char *)tag + ((tag->size + 7) & ~7));
     }
+
+    if (total_pages > MAX_PAGES) total_pages = MAX_PAGES;
 
     // Never allocate low memory; keep first 1MiB reserved.
     reserve_phys_range(0, 0x100000);
